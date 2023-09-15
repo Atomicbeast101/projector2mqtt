@@ -1,0 +1,27 @@
+---
+- name: Setup Projector Controller
+  hosts: all
+  any_errors_fatal: true
+  tasks:
+    - name: Upload docker-compose.yml file
+      template: 
+        src: docker-compose.yml.j2
+        dest: /root/docker-compose.yml
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: Login to private Docker registry
+      docker_login:
+        registry: registry.potatolab.dev
+        username: "{{ lookup('env', 'HOME_REGISTRY_USERNAME') }}"
+        password: "{{ lookup('env', 'HOME_REGISTRY_PASSWORD') }}"
+
+    - name: Create & run docker containers
+      docker_compose:
+        project_src: /root
+      register: output
+
+    - name: Show docker-compose output
+      ansible.builtin.debug:
+        var: output

@@ -1,0 +1,19 @@
+version: "3.3"
+services:
+  controller:
+    container_name: controller
+    image: registry.potatolab.dev/adam/{{ lookup('env', 'DRONE_REPO_NAME') }}:{{ lookup('env', 'DRONE_COMMIT_BRANCH') }}-dev-{{ lookup('env', 'DRONE_BUILD_NUMBER') }}
+    restart: "no"
+    privileged: true
+    ports:
+      - '5000:5000/tcp'
+    environment:
+      TZ: America/Chicago
+      LOG_LEVEL: DEBUG
+      PROJECTOR_BRAND: benq
+      PROJECTOR_MODEL: tk700
+      PROJECTOR_PORT: /dev/ttyUSB0
+      PROJECTOR_NAME: HomeTheater
+      MQTT_HOST: {{ lookup('env', 'MQTT_HOST') }}
+    devices:
+     - '/dev/ttyUSB0:/dev/ttyUSB0'

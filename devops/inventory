@@ -1,0 +1,2 @@
+[controller]
+projector.potato.lab ansible_user=root ansible_python_interpreter=/usr/bin/python3
