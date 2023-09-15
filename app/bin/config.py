@@ -47,7 +47,8 @@ SUPPORTED_PROJECTORS = {
     }
 }
 SUPPORTED_DEVICES_URL = '[TODO_HERE]'
-PROJECTOR_UNQIUE_ID_PATTERN = re.compile('[A-Za-z0-9_-]+')
+PROJECTOR_NAME_PATTERN = re.compile('[A-Za-z0-9]+')
+PERMITTED_CHARACTERS = 'A-Z & 0-9 characters.'
 
 # Class
 class Config:
@@ -113,8 +114,8 @@ class Config:
             # Validate PROJECTOR_NAME
             self.PROJECTOR_NAME = os.environ['PROJECTOR_NAME'] if 'PROJECTOR_NAME' in os.environ else None
             if self.PROJECTOR_NAME:
-                if not PROJECTOR_UNQIUE_ID_PATTERN.fullmatch(self.PROJECTOR_NAME):
-                    log.error('Invalid PROJECTOR_NAME value! It must only use A-Z, 0-9, _ and - characters.')
+                if not PROJECTOR_NAME_PATTERN.fullmatch(self.PROJECTOR_NAME):
+                    log.error('Invalid PROJECTOR_NAME value! It must only use {permitted}'.format(permitted=PERMITTED_CHARACTERS))
                     sys.exit(4)
             elif not self.PROJECTOR_NAME:
                 log.error('Invalid PROJECTOR_NAME value! Please populate a unique ID for this projector you want to control. It can be a brand/model or a name & location. Only A-Z, _ and - characters are permitted.')

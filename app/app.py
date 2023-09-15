@@ -13,8 +13,8 @@ import os
 
 # Attributes
 LOG_FORMAT = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-PROJECTOR_MQTT_TOPIC = 'projector/{name}/{type}'
-HOMEASSISTANT_MQTT_TOPIC = 'homeassistant/{component}/projector-{name}/{path}'
+PROJECTOR_MQTT_TOPIC = 'projector2mqtt/{name}/{type}'
+HOMEASSISTANT_MQTT_TOPIC = 'homeassistant/{component}/projector2mqtt-{name}/{path}'
 config = None
 log = None
 proj = None
@@ -51,9 +51,17 @@ def setup_projector():
         sys.exit(4)
 
 def setup_mqtt():
-    global mqttclient
+    global DEVICE, mqttclient
 
-    mqttclient = paho.mqtt.client.Client(config.PROJECTOR_NAME)
+    DEVICE = {
+        'name': '{brand} {model}'.format(config.PROJECTOR_BRAND, config.PROJECTOR_MODEL),
+        'manufacturer': config.PROJECTOR_BRAND,
+        'model': config.PROJECTOR_MODEL,
+        'identifiers': config.PROJECTOR_NAME,
+        'via_device': 'projector2mqtt'
+    }
+
+    mqttclient = paho.mqtt.client.Client('projector2mqtt')
     mqttclient.on_connect = on_connect
     mqttclient.on_message = on_message
     if config.MQTT_USERNAME:
@@ -72,9 +80,7 @@ def on_connect(client, userdata, flags, rc):
     mqttclient.subscribe('projector/{name}/set/#'.format(name=config.PROJECTOR_NAME.lower()))
 
 def on_message(client, userdata, msg):
-    global mqttclient
-
-    if msg.topic == 'projector/{name}/set/#'.format(name=config.PROJECTOR_NAME.lower()):
+    if msg.topic == '{}/#'.format(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='set')):
         log.info('Received toggle command from HomeAssistant...')
         if msg.payload == 'ON':
             success, reason = proj.on()
@@ -94,85 +100,117 @@ def on_message(client, userdata, msg):
                 if reason == 'bad_data':
                     log.error('Unexpected output from the projector! This is the output it received: {}'.format(reason['data']))
 
-        topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='state')
-        payload = {
-            'status': proj.status()['power_on'],
-            'lamp_hours': proj.status()['lamp_hours'],
-            'last_turned_off': proj.status()['last_turned_off'],
-            'cooldown_left': proj.status()['cooldown_left']
-        }
-        mqttclient.publish(topic, json.dumps(payload))
+        update_metrics()
 
 def configure_homeassistant():
     global mqttclient
 
-    # homeassistant/binary_sensor/projector-<name>/status/config
-    topic = HOMEASSISTANT_MQTT_TOPIC.format(component='binary_sensor', name=config.PROJECTOR_NAME.lower(), path='status/config')
+    # binary_sensors
+    # homeassistant/binary_sensor/projector2mqtt-<name>/status/config
+    topic = HOMEASSISTANT_MQTT_TOPIC.format(component='binary_sensor', name=config.PROJECTOR_NAME.lower(), path='projector/config')
     payload = {
-        'unique_id': 'projector-{name}-status'.format(name=config.PROJECTOR_NAME.lower()),
-        'name': '{name} Projector Power Status'.format(name=config.PROJECTOR_NAME),
-        'state_topic': 'projector/{name}/state'.format(name=config.PROJECTOR_NAME.lower()),
+        'availability_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='status'),
+        'qos': 0,
+        'device': DEVICE,
+        'state_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='status'),
+        'payload_on': 'on',
+        'payload_off': 'off',
         'icon': 'hass:projector',
-        'value_template': '{{ value_json.status }}'
+        'name': '{name} Projector'.format(name=config.PROJECTOR_NAME),
+        'unique_id': '{name}_projector.status'.format(name=config.PROJECTOR_NAME.lower())
     }
     mqttclient.publish(topic, json.dumps(payload))
-    # homeassistant/sensor/projector-<name>/lamp_hours/config
+
+    # sensors
+    # homeassistant/sensor/projector2mqtt-<name>/lamp_hours/config
     topic = HOMEASSISTANT_MQTT_TOPIC.format(component='sensor', name=config.PROJECTOR_NAME.lower(), path='lamp_hours/config')
     payload = {
-        'unique_id': 'projector-{name}-lamp-hours'.format(name=config.PROJECTOR_NAME.lower()),
-        'name': '{name} Projector Lamp Hours'.format(name=config.PROJECTOR_NAME),
-        'state_topic': 'projector/{name}/state'.format(name=config.PROJECTOR_NAME.lower()),
+        'availability_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='state'),
+        'qos': 0,
+        'device': DEVICE,
+        'state_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='state'),
+        'value_template': '{{ value_json.lamp_hours }}',
         'unit_of_measurement': 'hrs',
         'icon': 'hass:clock-time-four',
-        'value_template': '{{ value_json.lamp_hours }}'
+        'name': '{name} Projector'.format(name=config.PROJECTOR_NAME),
+        'unique_id': '{name}_projector.lamp_hours'.format(name=config.PROJECTOR_NAME.lower())
     }
     mqttclient.publish(topic, json.dumps(payload))
-    # homeassistant/sensor/projector-<name>/last_off/config
+    # homeassistant/sensor/projector2mqtt-<name>/last_off/config
     topic = HOMEASSISTANT_MQTT_TOPIC.format(component='sensor', name=config.PROJECTOR_NAME.lower(), path='last_off/config')
     payload = {
-        'unique_id': 'projector-{name}-last-off'.format(name=config.PROJECTOR_NAME.lower()),
-        'name': '{name} Projectors Last Power Timestamp'.format(name=config.PROJECTOR_NAME),
-        'state_topic': 'projector/{name}/state'.format(name=config.PROJECTOR_NAME.lower()),
-        'unit_of_measurement': '',
+        'availability_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='state'),
+        'qos': 0,
+        'device': DEVICE,
+        'state_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='state'),
+        'value_template': '{{ value_json.last_off }}',
         'icon': 'hass:clock-time-four',
-        'value_template': '{{ value_json.last_off }}'
+        'name': '{name} Projector'.format(name=config.PROJECTOR_NAME),
+        'unique_id': '{name}_projector.last_off'.format(name=config.PROJECTOR_NAME.lower())
     }
     mqttclient.publish(topic, json.dumps(payload))
-    # homeassistant/sensor/projector-<name>/cooldown/config
+    # homeassistant/sensor/projector2mqtt-<name>/cooldown/config
     topic = HOMEASSISTANT_MQTT_TOPIC.format(component='sensor', name=config.PROJECTOR_NAME.lower(), path='cooldown/config')
     payload = {
-        'unique_id': 'projector-{name}-cooldown'.format(name=config.PROJECTOR_NAME.lower()),
-        'name': '{name} Projector Cooldown Time Left'.format(name=config.PROJECTOR_NAME),
-        'state_topic': 'projector/{name}/state'.format(name=config.PROJECTOR_NAME.lower()),
-        'unit_of_measurement': 's',
+        'availability_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='state'),
+        'qos': 0,
+        'device': DEVICE,
+        'state_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='state'),
+        'value_template': '{{ value_json.cooldown_left }}',
+        'unit_of_measurement': 'min',
         'icon': 'hass:timer',
-        'value_template': '{{ value_json.cooldown_left }}'
+        'name': '{name} Projector'.format(name=config.PROJECTOR_NAME),
+        'unique_id': '{name}_projector.cooldown_left'.format(name=config.PROJECTOR_NAME.lower())
     }
     mqttclient.publish(topic, json.dumps(payload))
-    # homeassistant/switch/projector-<name>/state
+
+    # switches
+    # homeassistant/switch/projector2mqtt-<name>/state
     topic = HOMEASSISTANT_MQTT_TOPIC.format(component='switch', name=config.PROJECTOR_NAME.lower(), path='state')
     payload = {
-        'name': '{name} Projector'.format(name=config.PROJECTOR_NAME),
+        'availability_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='status'),
+        'qos': 0,
+        'device': DEVICE,
+        'state_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='status'),
+        'command_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='set'),
         'icon': 'hass:projector',
-        'state_topic': 'projector/{name}/state'.format(name=config.PROJECTOR_NAME.lower()),
-        'command_topic': 'projector/{name}/set'.format(name=config.PROJECTOR_NAME.lower()),
-        'value_template': '{{ value_json.cooldown_left }}'
+        'name': '{name} Projector'.format(name=config.PROJECTOR_NAME),
+        'unique_id': '{name}.projector'.format(name=config.PROJECTOR_NAME.lower())
+    }
+    mqttclient.publish(topic, json.dumps(payload))
+
+def update_metrics():
+    global mqttclient
+
+    # projector2mqtt/<name>/status
+    topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='status')
+    status = proj.status()
+    payload = 'off'
+    if status['power_on']:
+        payload = 'on'
+    mqttclient.publish(topic, payload)
+
+    # projector2mqtt/<name>/config
+    topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='config')
+    payload = {
+        'device_name': config.PROJECTOR_NAME,
+        'device_type': '{brand} {model}'.format(config.PROJECTOR_BRAND, config.PROJECTOR_MODEL)
+    }
+    mqttclient.publish(topic, json.dumps(payload))
+
+    # projector2mqtt/<name>/state
+    topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='state')
+    status = proj.status()
+    payload = {
+        'lamp_hours': status['lamp_hours'],
+        'last_turned_off': status['last_turned_off'],
+        'cooldown_left': status['cooldown_left']
     }
     mqttclient.publish(topic, json.dumps(payload))
 
 def update_state():
-    global mqttclient
-
     while True:
-        topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='state')
-        status = proj.status()
-        payload = {
-            'status': status['power_on'],
-            'lamp_hours': status['lamp_hours'],
-            'last_turned_off': status['last_turned_off'],
-            'cooldown_left': status['cooldown_left']
-        }
-        mqttclient.publish(topic, json.dumps(payload))
+        update_metrics()
         time.sleep(5)
 
 # Main

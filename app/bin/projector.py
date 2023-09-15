@@ -17,7 +17,7 @@ class Projector:
 
         self.power_on = False
         self.model = None
-        self.last_turned_off = None
+        self.last_off = None
 
         # Connect to projector
         self.con = serial.Serial(
@@ -76,14 +76,14 @@ class Projector:
         # Get data from projector
         lamp_hours = self._serial(self.projector_config['commands']['lamp_hours']) # Unknown if it reports minutes or hours
         cooldown_left = -1
-        if self.last_turned_off and datetime.datetime.now() > (self.last_turned_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)):
-            cooldown_left = ((self.last_turned_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
+        if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)):
+            cooldown_left = ((self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
 
         return {
             'model': self.model,
             'lamp_hours': lamp_hours,
             'power_on': self.power_on,
-            'last_turned_off': self.last_turned_off,
+            'last_off': self.last_off,
             'cooldown_left': cooldown_left
         }
 
@@ -94,10 +94,10 @@ class Projector:
             return self.on()
 
     def on(self):
-        if self.last_turned_off and datetime.datetime.now() > (self.last_turned_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)):
+        if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)):
             return False, {
                 'reason': 'needs_cooldown',
-                'data': ((self.last_turned_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds
+                'data': ((self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds
             }
 
         status = self._serial(self.projector_config['commands']['on'])
@@ -112,7 +112,7 @@ class Projector:
     def off(self):
         status = self._serial(self.projector_config['commands']['off'])
         if status == 'OFF':
-            self.last_turned_off = datetime.datetime.now()
+            self.last_off = datetime.datetime.now()
             self.power_on = False
             return True, ''
         return False, {
