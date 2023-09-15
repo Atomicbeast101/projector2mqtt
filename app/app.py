@@ -54,7 +54,7 @@ def setup_mqtt():
     global DEVICE, mqttclient
 
     DEVICE = {
-        'name': '{brand} {model}'.format(config.PROJECTOR_BRAND, config.PROJECTOR_MODEL),
+        'name': '{brand} {model}'.format(brand=config.PROJECTOR_BRAND, model=config.PROJECTOR_MODEL),
         'manufacturer': config.PROJECTOR_BRAND,
         'model': config.PROJECTOR_MODEL,
         'identifiers': config.PROJECTOR_NAME,
@@ -194,7 +194,7 @@ def update_metrics():
     topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='config')
     payload = {
         'device_name': config.PROJECTOR_NAME,
-        'device_type': '{brand} {model}'.format(config.PROJECTOR_BRAND, config.PROJECTOR_MODEL)
+        'device_type': '{brand} {model}'.format(brand=config.PROJECTOR_BRAND, model=config.PROJECTOR_MODEL)
     }
     mqttclient.publish(topic, json.dumps(payload))
 
