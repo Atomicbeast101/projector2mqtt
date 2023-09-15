@@ -203,7 +203,7 @@ def update_metrics():
     status = proj.status()
     payload = {
         'lamp_hours': status['lamp_hours'],
-        'last_turned_off': status['last_turned_off'],
+        'last_off': status['last_off'],
         'cooldown_left': status['cooldown_left']
     }
     mqttclient.publish(topic, json.dumps(payload))
