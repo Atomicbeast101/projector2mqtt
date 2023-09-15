@@ -117,7 +117,7 @@ def configure_homeassistant():
         'payload_off': 'off',
         'icon': 'hass:projector',
         'name': '{name} Projector'.format(name=config.PROJECTOR_NAME),
-        'unique_id': '{name}_projector.status'.format(name=config.PROJECTOR_NAME.lower())
+        'unique_id': '{name}_projector_status'.format(name=config.PROJECTOR_NAME.lower())
     }
     mqttclient.publish(topic, json.dumps(payload))
 
@@ -132,8 +132,8 @@ def configure_homeassistant():
         'value_template': '{{ value_json.lamp_hours }}',
         'unit_of_measurement': 'hrs',
         'icon': 'hass:clock-time-four',
-        'name': '{name} Projector'.format(name=config.PROJECTOR_NAME),
-        'unique_id': '{name}_projector.lamp_hours'.format(name=config.PROJECTOR_NAME.lower())
+        'name': '{name} Projector Lamp Hours'.format(name=config.PROJECTOR_NAME),
+        'unique_id': '{name}_projector_lamp_hours'.format(name=config.PROJECTOR_NAME.lower())
     }
     mqttclient.publish(topic, json.dumps(payload))
     # homeassistant/sensor/projector2mqtt-<name>/last_off/config
@@ -145,8 +145,8 @@ def configure_homeassistant():
         'state_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='state'),
         'value_template': '{{ value_json.last_off }}',
         'icon': 'hass:clock-time-four',
-        'name': '{name} Projector'.format(name=config.PROJECTOR_NAME),
-        'unique_id': '{name}_projector.last_off'.format(name=config.PROJECTOR_NAME.lower())
+        'name': '{name} Projector Last Off'.format(name=config.PROJECTOR_NAME),
+        'unique_id': '{name}_projector_last_off'.format(name=config.PROJECTOR_NAME.lower())
     }
     mqttclient.publish(topic, json.dumps(payload))
     # homeassistant/sensor/projector2mqtt-<name>/cooldown/config
@@ -159,8 +159,8 @@ def configure_homeassistant():
         'value_template': '{{ value_json.cooldown_left }}',
         'unit_of_measurement': 'min',
         'icon': 'hass:timer',
-        'name': '{name} Projector'.format(name=config.PROJECTOR_NAME),
-        'unique_id': '{name}_projector.cooldown_left'.format(name=config.PROJECTOR_NAME.lower())
+        'name': '{name} Projector Cooldown Left'.format(name=config.PROJECTOR_NAME),
+        'unique_id': '{name}_projector_cooldown_left'.format(name=config.PROJECTOR_NAME.lower())
     }
     mqttclient.publish(topic, json.dumps(payload))
 
