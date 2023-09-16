@@ -77,7 +77,7 @@ def on_connect(client, userdata, flags, rc):
     global mqttclient
 
     log.info('Connected to MQTT with result code: {code}'.format(code=str(rc)))
-    mqttclient.subscribe('projector/{name}/set/#'.format(name=config.PROJECTOR_NAME.lower()))
+    mqttclient.subscribe(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='set/#'))
 
 def on_message(client, userdata, msg):
     if msg.topic == '{}/#'.format(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='set')):
@@ -154,6 +154,8 @@ def configure_homeassistant():
         'device': DEVICE,
         'state_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='running'),
         'command_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), type='set'),
+        'payload_on': 'on',
+        'payload_off': 'off',
         'icon': 'hass:projector',
         'name': '{name} Projector'.format(name=config.PROJECTOR_NAME),
         'unique_id': '{name}.projector'.format(name=config.PROJECTOR_NAME.lower())
