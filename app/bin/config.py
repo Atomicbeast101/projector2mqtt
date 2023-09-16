@@ -60,8 +60,8 @@ class Config:
         self.LOG_LEVEL = 'INFO'
         self.LOG_PATH = '/logs'
         self.LOG_RETENTION_DAYS = 5
-        self.PROJECTOR_BRAND = 'benq'
-        self.PROJECTOR_MODEL = 'tk700'
+        self.PROJECTOR_BRAND = 'BenQ'
+        self.PROJECTOR_MODEL = 'TK700'
         self.PROJECTOR_PORT = '/dev/ttyUSB0'
         self.PROJECTOR_COOLDOWN_MINUTES = 10
         self.PROJECTOR_NAME = ''
