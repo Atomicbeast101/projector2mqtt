@@ -62,21 +62,17 @@ def setup_mqtt():
     }
 
     mqttclient = paho.mqtt.client.Client('projector2mqtt')
-    mqttclient.on_connect = on_connect
     mqttclient.on_message = on_message
     if config.MQTT_USERNAME:
         mqttclient.username_pw_set(config.MQTT_USERNAME, config.MQTT_PASSWORD)
     try:
         mqttclient.connect(config.MQTT_HOST, config.MQTT_PORT, config.MQTT_TIMEOUT)
+        mqttclient.subscribe(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set/#'))
     except Exception as ex:
         log.error('Unable to connect to MQTT server! Reason: {}'.format(str(ex)))
         sys.exit(4)
 
 # MQTT Functions
-def on_connect(client, userdata, flags, rc):
-    log.info('Connected to MQTT with result code: {code}'.format(code=str(rc)))
-    mqttclient.subscribe(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set/#'))
-
 def on_message(client, userdata, msg):
     log.debug('Topic received: {topic}'.format(topic=msg.topic))
     if msg.topic == PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set'):
