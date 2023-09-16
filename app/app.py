@@ -78,6 +78,7 @@ def on_connect(client, userdata, flags, rc):
     mqttclient.subscribe(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set'))
 
 def on_message(client, userdata, msg):
+    log.debug('Topic received: {topic}'.format(topic=msg.topic))
     if msg.topic == PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set'):
         log.info('Received toggle command from HomeAssistant...')
         if msg.payload == 'ON':
