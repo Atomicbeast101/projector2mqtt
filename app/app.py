@@ -75,7 +75,7 @@ def setup_mqtt():
 # MQTT Functions
 def on_connect(client, userdata, flags, rc):
     log.info('Connected to MQTT with result code: {code}'.format(code=str(rc)))
-    mqttclient.subscribe(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set'))
+    mqttclient.subscribe(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set/#'))
 
 def on_message(client, userdata, msg):
     log.debug('Topic received: {topic}'.format(topic=msg.topic))
