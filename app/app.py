@@ -75,10 +75,10 @@ def setup_mqtt():
 # MQTT Functions
 def on_connect(client, userdata, flags, rc):
     log.info('Connected to MQTT with result code: {code}'.format(code=str(rc)))
-    mqttclient.subscribe(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set/#'))
+    mqttclient.subscribe(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set'))
 
 def on_message(client, userdata, msg):
-    if msg.topic == PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set/#'):
+    if msg.topic == PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set'):
         log.info('Received toggle command from HomeAssistant...')
         if msg.payload == 'ON':
             success, reason = proj.on()
@@ -166,7 +166,7 @@ def update_metrics():
     mqttclient.publish(topic, 'online')
     # projector2mqtt/<name>/projector
     topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector')
-    mqttclient.publish(topic, status['status'])
+    mqttclient.publish(topic, status['running'])
     # projector2mqtt/<name>/lamp_hours
     topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='lamp_hours')
     mqttclient.publish(topic, status['lamp_hours'])

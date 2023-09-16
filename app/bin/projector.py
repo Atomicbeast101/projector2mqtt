@@ -15,7 +15,7 @@ class Projector:
         self.projector_config = bin.config.SUPPORTED_PROJECTORS[brand.lower()][model.lower()]
         self.log = log
 
-        self.state = 'off'
+        self.running = 'off'
         self.model = None
         self.last_off = None
 
@@ -33,7 +33,7 @@ class Projector:
 
         output = self._serial(self.projector_config['commands']['status'])
         if output == 'ON':
-            self.state = 'on'
+            self.running = 'on'
         self.model = self._serial(self.projector_config['commands']['model'])
 
     def _read(self):
@@ -65,9 +65,9 @@ class Projector:
         while True:
             output = self._serial(self.projector_config['commands']['status'])
             if output == 'ON':
-                self.state = 'on'
+                self.running = 'on'
             elif output == 'OFF':
-                self.state = 'off'
+                self.running = 'off'
             else:
                 self.log.error('Unable to check power status of the projector! Output received: {}'.format(output))
             time.sleep(5)
@@ -82,7 +82,7 @@ class Projector:
         return {
             'model': self.model,
             'lamp_hours': lamp_hours,
-            'state': self.state,
+            'running': self.running,
             'last_off': self.last_off,
             'cooldown_left': cooldown_left
         }
@@ -102,7 +102,7 @@ class Projector:
 
         status = self._serial(self.projector_config['commands']['on'])
         if status == 'ON':
-            self.state = 'on'
+            self.running = 'on'
             return True, ''
         return False, {
             'reason': 'bad_data',
@@ -113,7 +113,7 @@ class Projector:
         status = self._serial(self.projector_config['commands']['off'])
         if status == 'OFF':
             self.last_off = datetime.datetime.now()
-            self.state = 'off'
+            self.running = 'off'
             return True, ''
         return False, {
             'reason': 'bad_data',
