@@ -62,7 +62,7 @@ class Projector:
                     self.log.warning('Projector returned failed response "{}". Trying again in 5 seconds.'.format(self.projector_config['failed_response']))
                     time.sleep(5)
                 else:
-                    return True, output.strip()[1:-1].split('=')[1]
+                    return output.strip()[1:-1].split('=')[1]
             except Exception:
                 raise ProjectorException('Unexpected error when trying to process the returned output: {}!'.format(output))
 
