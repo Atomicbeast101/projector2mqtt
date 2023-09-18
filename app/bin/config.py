@@ -42,7 +42,8 @@ SUPPORTED_PROJECTORS = {
                 'send': '\r',
                 'wait': 1,
                 'expect': '>'
-            }
+            },
+            'failed_response': '*Block item#'
         }
     }
 }

@@ -51,15 +51,20 @@ class Projector:
             raise ProjectorException('Unexpected serial output from the projector! Expecting {} but got {} instead (for {} command).'.format(self.projector_config['handshake']['expect'], output, cmd))
 
         # Send command
-        self.log.debug('Command sent to serial device: {}'.format(cmd))
-        self.con.write((cmd + self.projector_config['handshake']['send']).encode())
-        time.sleep(self.projector_config['handshake']['wait'])
-        output = self._read()
-        self.log.debug('Output received from serial device: {}'.format(output.strip()))
-        try:
-            return output.strip()[1:-1].split('=')[1]
-        except Exception:
-            raise ProjectorException('Unexpected error when trying to process the returned output: {}!'.format(output))
+        while True:
+            self.log.debug('Command sent to serial device: {}'.format(cmd))
+            self.con.write((cmd + self.projector_config['handshake']['send']).encode())
+            time.sleep(self.projector_config['handshake']['wait'])
+            output = self._read()
+            self.log.debug('Output received from serial device: {}'.format(output.strip()))
+            try:
+                if output.strip() == self.projector_config['failed_response']:
+                    self.log.warning('Projector returned failed response "{}". Trying again in 5 seconds.'.format(self.projector_config['failed_response']))
+                    time.sleep(5)
+                else:
+                    return True, output.strip()[1:-1].split('=')[1]
+            except Exception:
+                raise ProjectorException('Unexpected error when trying to process the returned output: {}!'.format(output))
 
     def updater(self):
         while True:
