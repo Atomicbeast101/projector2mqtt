@@ -18,6 +18,8 @@ class Projector:
         self.running = 'off'
         self.model = None
         self.last_off = None
+        
+        self.lamp_hours = None
 
         # Connect to projector
         self.con = serial.Serial(
@@ -67,7 +69,11 @@ class Projector:
                 raise ProjectorException('Unexpected error when trying to process the returned output: {}!'.format(output))
 
     def updater(self):
+        count = 0
         while True:
+            if count >= 3:
+                self.lamp_hours = self._serial(self.projector_config['commands']['lamp_hours'])
+                count = 0
             output = self._serial(self.projector_config['commands']['status'])
             if output == 'ON':
                 self.running = 'on'
@@ -75,18 +81,18 @@ class Projector:
                 self.running = 'off'
             else:
                 self.log.error('Unable to check power status of the projector! Output received: {}'.format(output))
+            count += 1
             time.sleep(5)
 
     def status(self):
         # Get data from projector
-        lamp_hours = self._serial(self.projector_config['commands']['lamp_hours']) # Unknown if it reports minutes or hours
         cooldown_left = -1
         if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)):
             cooldown_left = ((self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
 
         return {
             'model': self.model,
-            'lamp_hours': lamp_hours,
+            'lamp_hours': self.lamp_hours,
             'running': self.running,
             'last_off': self.last_off,
             'cooldown_left': cooldown_left
