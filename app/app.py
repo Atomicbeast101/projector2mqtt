@@ -159,25 +159,23 @@ def configure_homeassistant():
     }
     mqttclient.publish(topic, json.dumps(payload))
 
-def update_metrics():
+def update_mqtt():
     while True:
-        metrics = proj.metrics()
-
         # projector2mqtt/<name>/status
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='status')
         mqttclient.publish(topic, 'online')
         # projector2mqtt/<name>/projector
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector')
-        mqttclient.publish(topic, metrics['running'])
+        mqttclient.publish(topic, proj.running)
         # projector2mqtt/<name>/lamp_hours
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='lamp_hours')
-        mqttclient.publish(topic, metrics['lamp_hours'])
+        mqttclient.publish(topic, proj.lamp_hours)
         # projector2mqtt/<name>/last_off
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='last_off')
-        mqttclient.publish(topic, metrics['last_off'])
+        mqttclient.publish(topic, proj.last_off)
         # projector2mqtt/<name>/cooldown_left
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='cooldown_left')
-        mqttclient.publish(topic, metrics['cooldown_left'])
+        mqttclient.publish(topic, proj.cooldown_left)
         time.sleep(1)
 
 # Main
@@ -190,9 +188,9 @@ def main():
     setup_mqtt()
     configure_homeassistant()
     log.info('Starting projector metrics updater thread...')
-    threading.Thread(target=proj.updater, daemon=True, name='ProjectorMetricsUpdater')
+    threading.Thread(target=proj.update, daemon=True, name='ProjectorUpdater')
     log.info('Starting MQTT metrics thread...')
-    threading.Thread(target=update_metrics, daemon=True, name='MQTTMetricsUpdater')
+    threading.Thread(target=update_mqtt, daemon=True, name='MQTTUpdater')
     log.info('Listening for requests from HomeAssistant...')
     mqttclient.loop_forever()
 

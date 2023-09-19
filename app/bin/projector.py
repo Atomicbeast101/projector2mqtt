@@ -16,6 +16,7 @@ class Projector:
         self.last_off = None
         
         self.lamp_hours = None
+        self.cooldown_left = -1
 
         self._con = bin.communicator.Communicator(self._config, port, log)
 
@@ -39,9 +40,12 @@ class Projector:
             else:
                 return output.strip()[1:-1].split('=')[1]
 
-    def updater(self):
+    def update(self):
         count = 0
         while True:
+            self.cooldown_left = -1
+            if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)):
+                self.cooldown_left = ((self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
             if count >= 3:
                 self.lamp_hours = self._execute(self._config['commands']['lamp_hours'])
                 count = 0
@@ -54,19 +58,6 @@ class Projector:
                 self.log.error('Unable to check power status of the projector! Output received: {}'.format(output))
             count += 1
             time.sleep(5)
-
-    def metrics(self):
-        cooldown_left = -1
-        if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)):
-            cooldown_left = ((self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
-
-        return {
-            'model': self.model,
-            'lamp_hours': self.lamp_hours,
-            'running': self.running,
-            'last_off': self.last_off,
-            'cooldown_left': cooldown_left
-        }
 
     def toggle(self):
         if self.running == 'on':
@@ -81,7 +72,7 @@ class Projector:
                 'data': ((self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds
             }
 
-        status = self._execute(self.projector_config['commands']['on'])
+        status = self._execute(self._config['commands']['on'])
         if status == 'ON':
             self.running = 'on'
             return True, ''
@@ -91,7 +82,7 @@ class Projector:
         }
 
     def off(self):
-        status = self._execute(self.projector_config['commands']['off'])
+        status = self._execute(self._config['commands']['off'])
         if status == 'OFF':
             self.last_off = datetime.datetime.now()
             self.running = 'off'
