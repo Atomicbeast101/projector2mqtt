@@ -30,6 +30,7 @@ class Communicator:
         return output
 
     def execute(self, cmd):
+        self._log.debug('Acquiring lock to perform serial command...')
         self._lock.acquire()
 
         # Access console
@@ -47,8 +48,11 @@ class Communicator:
             output = self._read()
             self._log.debug('Output received from serial device: {}'.format(output.strip()))
             try:
+                self._lock.release()
+                self._log.debug('Released lock to perform serial command!')
                 return output.strip()
             except Exception:
-                raise bin.exception.ProjectorException('Unexpected error when trying to process the returned output: {}!'.format(output))
-            finally:
                 self._lock.release()
+                self._log.debug('Released lock to perform serial command!')
+                raise bin.exception.ProjectorException('Unexpected error when trying to process the returned output: {}!'.format(output))
+                
