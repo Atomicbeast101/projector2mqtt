@@ -81,6 +81,7 @@ def on_message(client, userdata, msg):
     log.debug('Topic received: {topic}'.format(topic=msg.topic))
     if msg.topic == PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set'):
         log.info('Received toggle command from HomeAssistant...')
+        log.debug('Payload received: {}'.format(msg.payload))
         if msg.payload == 'ON':
             success, reason = proj.on()
             if success:
@@ -91,7 +92,7 @@ def on_message(client, userdata, msg):
                 elif reason == 'bad_data':
                     log.error('Unexpected output from the projector! This is the output it received: {}'.format(reason['data']))
 
-        if msg.payload == 'OFF':
+        elif msg.payload == 'OFF':
             success, reason = proj.off()
             if success:
                 log.info('Successfully turned off the projector!')
