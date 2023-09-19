@@ -2,6 +2,7 @@
 import paho.mqtt.publish
 import paho.mqtt.client
 import logging.handlers
+import bin.exception
 import bin.projector
 import bin.config
 import threading
@@ -46,7 +47,7 @@ def setup_projector():
     global proj
     try:
         proj = bin.projector.Projector(config.PROJECTOR_BRAND.lower(), config.PROJECTOR_MODEL.lower(), config.PROJECTOR_PORT, log)
-    except bin.projector.ProjectorException as ex:
+    except bin.exception.ProjectorException as ex:
         log.error('Error trying to load the projector. Reason: {}'.format(str(ex)))
         sys.exit(4)
 

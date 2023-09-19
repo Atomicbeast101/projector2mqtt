@@ -33,10 +33,10 @@ class Communicator:
         self._lock.acquire()
 
         # Access console
-        self._serial.write(self.projector_config['handshake']['send'].encode())
-        time.sleep(self.projector_config['handshake']['wait'])
+        self._serial.write(self._config['handshake']['send'].encode())
+        time.sleep(self._config['handshake']['wait'])
         output = self._read()
-        if output != self.projector_config['handshake']['expect']:
+        if output != self._config['handshake']['expect']:
             raise bin.exception.ProjectorException('Unexpected serial output from the projector! Expecting {} but got {} instead (for {} command).'.format(self._config['handshake']['expect'], output, cmd))
 
         # Send command & receive output
