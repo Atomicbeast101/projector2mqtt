@@ -67,12 +67,15 @@ def setup_mqtt():
         mqttclient.username_pw_set(config.MQTT_USERNAME, config.MQTT_PASSWORD)
     try:
         mqttclient.connect(config.MQTT_HOST, config.MQTT_PORT, config.MQTT_TIMEOUT)
-        mqttclient.subscribe(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set'))
     except Exception as ex:
         log.error('Unable to connect to MQTT server! Reason: {}'.format(str(ex)))
         sys.exit(4)
 
 # MQTT Functions
+def on_connect(client, userdata, flags, rc):
+    log.info('Connected to MQTT with result code: {}'.format(str(rc)))
+    client.subscribe(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set/#'))
+
 def on_message(client, userdata, msg):
     log.debug('Topic received: {topic}'.format(topic=msg.topic))
     if msg.topic == PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set'):
@@ -94,8 +97,6 @@ def on_message(client, userdata, msg):
             else:
                 if reason == 'bad_data':
                     log.error('Unexpected output from the projector! This is the output it received: {}'.format(reason['data']))
-
-        update_metrics()
 
 def configure_homeassistant():
     # sensors
