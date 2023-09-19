@@ -160,24 +160,24 @@ def configure_homeassistant():
 
 def update_metrics():
     while True:
-        status = proj.status()
+        metrics = proj.metrics()
 
         # projector2mqtt/<name>/status
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='status')
         mqttclient.publish(topic, 'online')
         # projector2mqtt/<name>/projector
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector')
-        mqttclient.publish(topic, status['running'])
+        mqttclient.publish(topic, metrics['running'])
         # projector2mqtt/<name>/lamp_hours
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='lamp_hours')
-        mqttclient.publish(topic, status['lamp_hours'])
+        mqttclient.publish(topic, metrics['lamp_hours'])
         # projector2mqtt/<name>/last_off
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='last_off')
-        mqttclient.publish(topic, status['last_off'])
+        mqttclient.publish(topic, metrics['last_off'])
         # projector2mqtt/<name>/cooldown_left
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='cooldown_left')
-        mqttclient.publish(topic, status['cooldown_left'])
-        time.sleep(5)
+        mqttclient.publish(topic, metrics['cooldown_left'])
+        time.sleep(1)
 
 # Main
 def main():
