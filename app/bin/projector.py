@@ -19,7 +19,7 @@ class Projector:
 
         self._con = bin.communicator.Communicator(self._config, port, log)
 
-        output = self._execute(self._config['commands']['model'])
+        output = self._execute(self._config['commands']['status'])
         if output == 'ON':
             self.running = 'on'
         self.model = self._execute(self._config['commands']['model'])
