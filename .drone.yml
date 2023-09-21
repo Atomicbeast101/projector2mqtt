@@ -54,13 +54,13 @@ steps:
           {
             "priority": 5,
             "title": "Drone DevOps",
-            "message": "[SUCCESS] ${DRONE_REPO_NAME}:${DRONE_COMMIT_BRANCH} image has been successfully tested!"
+            "message": "[SUCCESS] ${DRONE_REPO_NAME}:${DRONE_COMMIT_BRANCH} image has been successfully deployed!"
           }
         {{else}}
           {
             "priority": 5,
             "title": "Drone DevOps",
-            "message": "[FAILED] ${DRONE_REPO_NAME}:${DRONE_COMMIT_BRANCH} image has failed the test(s)!"
+            "message": "[FAILED] ${DRONE_REPO_NAME}:${DRONE_COMMIT_BRANCH} image has failed the deployment!"
           }
         {{/success}}
     depends_on:
