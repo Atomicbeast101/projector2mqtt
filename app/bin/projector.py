@@ -9,7 +9,7 @@ import time
 class Projector:
     def __init__(self, brand, model, port, log):
         self._config = bin.config.SUPPORTED_PROJECTORS[brand.lower()][model.lower()]
-        self.log = log
+        self._log = log
         self.lock = False
 
         self.running = 'off'
@@ -91,7 +91,7 @@ class Projector:
             elif output == 'OFF':
                 self.running = 'off'
             else:
-                self.log.error('Unable to check power status of the projector! Output received: {}'.format(output))
+                self._log.error('Unable to check power status of the projector! Output received: {}'.format(output))
             count += 1
             time.sleep(5)
 
