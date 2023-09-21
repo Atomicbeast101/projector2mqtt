@@ -31,8 +31,18 @@ def setup_console_logging():
     log.addHandler(consoleHandler)
 
 def load_config():
-    global config
+    global config, DEVICE
+
+    log.info('Loading configuration...')
     config = bin.config.Config(log)
+    DEVICE = {
+        'name': '{brand} {model}'.format(brand=config.PROJECTOR_BRAND, model=config.PROJECTOR_MODEL),
+        'manufacturer': config.PROJECTOR_BRAND,
+        'model': config.PROJECTOR_MODEL,
+        'identifiers': config.PROJECTOR_NAME,
+        'via_device': 'projector2mqtt'
+    }
+    log.info('Configuration loaded!')
 
 def setup_file_logging():
     log.setLevel(logging.getLevelName(config.LOG_LEVEL))
@@ -52,31 +62,29 @@ def setup_projector():
         sys.exit(4)
 
 def setup_mqtt():
-    global DEVICE, mqttclient
+    global mqttclient
 
-    DEVICE = {
-        'name': '{brand} {model}'.format(brand=config.PROJECTOR_BRAND, model=config.PROJECTOR_MODEL),
-        'manufacturer': config.PROJECTOR_BRAND,
-        'model': config.PROJECTOR_MODEL,
-        'identifiers': config.PROJECTOR_NAME,
-        'via_device': 'projector2mqtt'
-    }
-
+    log.debug('Connecting to MQTT server...')
     mqttclient = paho.mqtt.client.Client('projector2mqtt')
     mqttclient.on_connect = on_connect
     mqttclient.on_message = on_message
     if config.MQTT_USERNAME:
+        log.debug('Setting username/password for access to MQTT server...')
         mqttclient.username_pw_set(config.MQTT_USERNAME, config.MQTT_PASSWORD)
+        log.debug('Username/Password set for access to MQTT server!')
     try:
         mqttclient.connect(config.MQTT_HOST, config.MQTT_PORT, config.MQTT_TIMEOUT)
+        log.debug('Connected to MQTT server!')
     except Exception as ex:
         log.error('Unable to connect to MQTT server! Reason: {}'.format(str(ex)))
         sys.exit(4)
 
 # MQTT Functions
 def on_connect(client, userdata, flags, rc):
-    log.info('Connected to MQTT with result code: {}'.format(str(rc)))
-    client.subscribe(PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set/#'))
+    log.debug('Connected to MQTT with result code: {}'.format(str(rc)))
+    topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector/set/#')
+    log.debug('Subscribed to {topic} topic...'.format(topic=topic))
+    client.subscribe(topic)
 
 def on_message(client, userdata, msg):
     log.debug('Topic received: {topic}'.format(topic=msg.topic))
@@ -103,8 +111,8 @@ def on_message(client, userdata, msg):
 
 def configure_homeassistant():
     # sensors
-    # homeassistant/sensor/projector2mqtt-<name>/lamp_hours/config
     topic = HOMEASSISTANT_MQTT_TOPIC.format(component='sensor', name=config.PROJECTOR_NAME.lower(), path='lamp_hours/config')
+    log.debug('Configuring {topic} topic...'.format(topic=topic))
     payload = {
         'availability_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='status'),
         'qos': 0,
@@ -116,8 +124,8 @@ def configure_homeassistant():
         'unique_id': '{name}.lamp_hours'.format(name=config.PROJECTOR_NAME.lower())
     }
     mqttclient.publish(topic, json.dumps(payload))
-    # homeassistant/sensor/projector2mqtt-<name>/last_off/config
     topic = HOMEASSISTANT_MQTT_TOPIC.format(component='sensor', name=config.PROJECTOR_NAME.lower(), path='last_off/config')
+    log.debug('Configuring {topic} topic...'.format(topic=topic))
     payload = {
         'availability_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='status'),
         'qos': 0,
@@ -128,8 +136,8 @@ def configure_homeassistant():
         'unique_id': '{name}.last_off'.format(name=config.PROJECTOR_NAME.lower())
     }
     mqttclient.publish(topic, json.dumps(payload))
-    # homeassistant/sensor/projector2mqtt-<name>/cooldown_left/config
     topic = HOMEASSISTANT_MQTT_TOPIC.format(component='sensor', name=config.PROJECTOR_NAME.lower(), path='cooldown_left/config')
+    log.debug('Configuring {topic} topic...'.format(topic=topic))
     payload = {
         'availability_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='status'),
         'qos': 0,
@@ -143,8 +151,8 @@ def configure_homeassistant():
     mqttclient.publish(topic, json.dumps(payload))
 
     # switches
-    # homeassistant/switch/projector2mqtt-<name>/state/config
     topic = HOMEASSISTANT_MQTT_TOPIC.format(component='switch', name=config.PROJECTOR_NAME.lower(), path='state/config')
+    log.debug('Configuring {topic} topic...'.format(topic=topic))
     payload = {
         'availability_topic': PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='status'),
         'qos': 0,
@@ -176,21 +184,25 @@ def update_mqtt():
         # projector2mqtt/<name>/cooldown_left
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='cooldown_left')
         mqttclient.publish(topic, proj.cooldown_left)
-        time.sleep(1)
+        log.info('Updated MQTT metrics!')
+        time.sleep(5)
 
 # Main
 def main():
-    global proj
     setup_console_logging()
     load_config()
     setup_file_logging()
+    log.info('Starting Projector communicator...')
     setup_projector()
+    log.info('Projector communicator started!')
+    log.info('Starting MQTT communicator...')
     setup_mqtt()
     configure_homeassistant()
-    log.info('Starting projector metrics updater thread...')
-    log.info('Starting MQTT metrics thread...')
+    log.debug('Starting MQTTUpdater thread...')
     threading.Thread(target=update_mqtt, daemon=True, name='MQTTUpdater')
-    log.info('Listening for requests from HomeAssistant...')
+    log.debug('Started MQTTUpdater thread!')
+    log.info('MQTT communicator started!')
+    log.info('Listening for MQTT requests from HomeAssistant...')
     mqttclient.loop_forever()
 
 main()

@@ -35,7 +35,9 @@ class Projector:
         self.model = self._execute(self._config['commands']['model'])
 
         # Start updater thread
+        self._log.debug('Starting ProjectorUpdater thread...')
         threading.Thread(target=self.update, daemon=True, name='ProjectorUpdater')
+        self._log.debug('Started ProjectorUpdater thread!')
 
     def _read(self):
         output = ''
