@@ -36,7 +36,7 @@ class Projector:
 
         # Start updater thread
         self._log.debug('Starting ProjectorUpdater thread...')
-        threading.Thread(target=self.update, daemon=True, name='ProjectorUpdater')
+        threading.Thread(target=self.update, daemon=True, name='ProjectorUpdater').start()
         self._log.debug('Started ProjectorUpdater thread!')
 
     def _read(self):

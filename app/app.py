@@ -169,20 +169,26 @@ def configure_homeassistant():
 
 def update_mqtt():
     while True:
+        log.info('Updating MQTT metrics...')
         # projector2mqtt/<name>/status
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='status')
+        log.debug('Updating {topic} topic...'.format(topic=topic))
         mqttclient.publish(topic, 'online')
         # projector2mqtt/<name>/projector
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='projector')
+        log.debug('Updating {topic} topic...'.format(topic=topic))
         mqttclient.publish(topic, proj.running)
         # projector2mqtt/<name>/lamp_hours
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='lamp_hours')
+        log.debug('Updating {topic} topic...'.format(topic=topic))
         mqttclient.publish(topic, proj.lamp_hours)
         # projector2mqtt/<name>/last_off
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='last_off')
+        log.debug('Updating {topic} topic...'.format(topic=topic))
         mqttclient.publish(topic, proj.last_off)
         # projector2mqtt/<name>/cooldown_left
         topic = PROJECTOR_MQTT_TOPIC.format(name=config.PROJECTOR_NAME.lower(), path='cooldown_left')
+        log.debug('Updating {topic} topic...'.format(topic=topic))
         mqttclient.publish(topic, proj.cooldown_left)
         log.info('Updated MQTT metrics!')
         time.sleep(5)
@@ -199,7 +205,7 @@ def main():
     setup_mqtt()
     configure_homeassistant()
     log.debug('Starting MQTTUpdater thread...')
-    threading.Thread(target=update_mqtt, daemon=True, name='MQTTUpdater')
+    threading.Thread(target=update_mqtt, daemon=True, name='MQTTUpdater').start()
     log.debug('Started MQTTUpdater thread!')
     log.info('MQTT communicator started!')
     log.info('Listening for MQTT requests from HomeAssistant...')
