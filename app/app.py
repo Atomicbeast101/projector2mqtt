@@ -188,7 +188,6 @@ def main():
     setup_mqtt()
     configure_homeassistant()
     log.info('Starting projector metrics updater thread...')
-    threading.Thread(target=proj.update, daemon=True, name='ProjectorUpdater')
     log.info('Starting MQTT metrics thread...')
     threading.Thread(target=update_mqtt, daemon=True, name='MQTTUpdater')
     log.info('Listening for requests from HomeAssistant...')
