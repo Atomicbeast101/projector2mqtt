@@ -113,11 +113,11 @@ class Projector(threading.Thread):
         self._log.info('Connecting to projector\'s serial port...')
         try:
             self.serial = serial.Serial(
-                port=self._port,
-                baudrate=self._config['baudrate'],
-                parity=self._config['parity'],
-                stopbits=self._config['stopbits'],
-                bytesize=self._config['bytesize'],
+                port=self._config.PROJECTOR_PORT,
+                baudrate=self._config.PROJECTOR_CONFIG['baudrate'],
+                parity=self._config.PROJECTOR_CONFIG['parity'],
+                stopbits=self._config.PROJECTOR_CONFIG['stopbits'],
+                bytesize=self._config.PROJECTOR_CONFIG['bytesize'],
                 timeout=bin.config.SERIAL_TIMEOUT,
                 rtscts=False,
                 dsrdtr=False
