@@ -45,38 +45,38 @@ class Projector(threading.Thread):
         
         self._log.info('Configuring MQTT topics for HomeAssistant...')
         # sensors
-        topic = self._config.HOMEASSISTANT_MQTT_TOPIC.format(component='sensor', name=self._config.PROJECTOR_NAME.lower(), path='lamp_hours/config')
+        topic = self._config.MQTT_TOPIC_HOMEASSISTANT.format(component='sensor', name=self._config.PROJECTOR_NAME.lower(), path='lamp_hours/config')
         self._log.debug('Configuring {topic} topic...'.format(topic=topic))
         payload = {
-            'availability_topic': self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='status'),
+            'availability_topic': self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='status'),
             'qos': 0,
             'device': self._config.DEVICE,
-            'state_topic': self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='lamp_hours'),
+            'state_topic': self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='lamp_hours'),
             'unit_of_measurement': 'hrs',
             'icon': 'hass:clock-time-four',
             'name': '{name} Projector Lamp Hours'.format(name=self._config.PROJECTOR_NAME),
             'unique_id': '{name}.lamp_hours'.format(name=self._config.PROJECTOR_NAME.lower())
         }
         self._mqtt.publish(topic, json.dumps(payload))
-        topic = self._config.HOMEASSISTANT_MQTT_TOPIC.format(component='sensor', name=self._config.PROJECTOR_NAME.lower(), path='last_off/config')
+        topic = self._config.MQTT_TOPIC_HOMEASSISTANT.format(component='sensor', name=self._config.PROJECTOR_NAME.lower(), path='last_off/config')
         self._log.debug('Configuring {topic} topic...'.format(topic=topic))
         payload = {
-            'availability_topic': self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='status'),
+            'availability_topic': self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='status'),
             'qos': 0,
             'device': self._config.DEVICE,
-            'state_topic': self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='last_off'),
+            'state_topic': self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='last_off'),
             'icon': 'hass:clock-time-four',
             'name': '{name} Projector Last Off'.format(name=self._config.PROJECTOR_NAME),
             'unique_id': '{name}.last_off'.format(name=self._config.PROJECTOR_NAME.lower())
         }
         self._mqtt.publish(topic, json.dumps(payload))
-        topic = self._config.HOMEASSISTANT_MQTT_TOPIC.format(component='sensor', name=self._config.PROJECTOR_NAME.lower(), path='cooldown_left/config')
+        topic = self._config.MQTT_TOPIC_HOMEASSISTANT.format(component='sensor', name=self._config.PROJECTOR_NAME.lower(), path='cooldown_left/config')
         self._log.debug('Configuring {topic} topic...'.format(topic=topic))
         payload = {
-            'availability_topic': self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='status'),
+            'availability_topic': self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='status'),
             'qos': 0,
             'device': self._config.DEVICE,
-            'state_topic': self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='cooldown_left'),
+            'state_topic': self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='cooldown_left'),
             'unit_of_measurement': 'min',
             'icon': 'hass:timer',
             'name': '{name} Projector Cooldown Left'.format(name=self._config.PROJECTOR_NAME),
@@ -85,14 +85,14 @@ class Projector(threading.Thread):
         self._mqtt.publish(topic, json.dumps(payload))
 
         # switches
-        topic = self._config.HOMEASSISTANT_MQTT_TOPIC.format(component='switch', name=self._config.PROJECTOR_NAME.lower(), path='state/config')
+        topic = self._config.MQTT_TOPIC_HOMEASSISTANT.format(component='switch', name=self._config.PROJECTOR_NAME.lower(), path='state/config')
         self._log.debug('Configuring {topic} topic...'.format(topic=topic))
         payload = {
-            'availability_topic': self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='status'),
+            'availability_topic': self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='status'),
             'qos': 0,
             'device': self._config.DEVICE,
-            'state_topic': self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='projector'),
-            'command_topic': self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='projector/set'),
+            'state_topic': self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='projector'),
+            'command_topic': self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='projector/set'),
             'payload_on': 'on',
             'payload_off': 'off',
             'icon': 'hass:projector',
@@ -157,13 +157,13 @@ class Projector(threading.Thread):
     
     def _mqtt_on_connect(self, client, data, flags, rc):
         self._log.debug('Connected to MQTT server with result code: {}'.format(str(rc)))
-        topic = self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='projector/set/#')
+        topic = self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='projector/set/#')
         client.subscribe(topic)
         self._log.debug('Subscribed to {topic} topic...'.format(topic=topic))
     
     def _mqtt_on_message(self, client, data, msg):
         self._log.debug('Topic received: {topic}'.format(topic=msg.topic))
-        if msg.topic == self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='projector/set'):
+        if msg.topic == self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='projector/set'):
             self._log.info('Received toggle command from HomeAssistant...')
             self._log.debug('Payload received: {}'.format(msg.payload.decode().upper()))
             if msg.payload.decode().upper() == 'ON':
@@ -228,23 +228,23 @@ class Projector(threading.Thread):
     def _update_mqtt(self):
         self._log.info('Updating MQTT metrics...')
         # projector2mqtt/<name>/status
-        topic = self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='status')
+        topic = self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='status')
         self._log.debug('Updating {topic} topic...'.format(topic=topic))
         self._mqtt.publish(topic, 'online')
         # projector2mqtt/<name>/projector
-        topic = self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='projector')
+        topic = self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='projector')
         self._log.debug('Updating {topic} topic...'.format(topic=topic))
         self._mqtt.publish(topic, self.running)
         # projector2mqtt/<name>/lamp_hours
-        topic = self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='lamp_hours')
+        topic = self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='lamp_hours')
         self._log.debug('Updating {topic} topic...'.format(topic=topic))
         self._mqtt.publish(topic, self.lamp_hours)
         # projector2mqtt/<name>/last_off
-        topic = self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='last_off')
+        topic = self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='last_off')
         self._log.debug('Updating {topic} topic...'.format(topic=topic))
         self._mqtt.publish(topic, self.last_off)
         # projector2mqtt/<name>/cooldown_left
-        topic = self._config.PROJECTOR_MQTT_TOPIC.format(name=self._config.PROJECTOR_NAME.lower(), path='cooldown_left')
+        topic = self._config.MQTT_TOPIC_PROJECTOR.format(name=self._config.PROJECTOR_NAME.lower(), path='cooldown_left')
         self._log.debug('Updating {topic} topic...'.format(topic=topic))
         self._mqtt.publish(topic, self.cooldown_left)
         self._log.info('Updated MQTT metrics!')
