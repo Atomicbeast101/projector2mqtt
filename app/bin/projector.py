@@ -139,7 +139,7 @@ class Projector(threading.Thread):
         time.sleep(self._config.PROJECTOR_CONFIG['handshake']['wait'])
         output = self._read()
         if output != self._config.PROJECTOR_CONFIG['handshake']['expect']:
-            raise bin.exception.ProjectorException('Unexpected serial output from the projector! Expecting {} but got {} instead (for {} command).'.format(self._config['handshake']['expect'], output, cmd))
+            raise bin.exception.ProjectorException('Unexpected serial output from the projector! Expecting {} but got {} instead (for {} command).'.format(self._config.PROJECTOR_CONFIG['handshake']['expect'], output, cmd))
 
         # Execute command
         count = 0
