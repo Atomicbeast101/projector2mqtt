@@ -12,6 +12,8 @@ import sys
 # Classes
 class Projector(threading.Thread):
     def __init__(self, log, config):
+        threading.Thread.__init__(self)
+
         self._log = log
         self._config = config
 
