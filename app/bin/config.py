@@ -20,6 +20,7 @@ import re
 # MQTT_PORT = 1883
 # MQTT_USERNAME = <BLANK_IF_NOT_USED>
 # MQTT_PASSWORD = <BLANK_IF_NOT_USED>
+# MQTT_TIMEOUT = 60
 
 # Attributes
 SERIAL_TIMEOUT = 1
@@ -32,7 +33,6 @@ SUPPORTED_PROJECTORS = {
             'parity': serial.PARITY_NONE,
             'stopbits': serial.STOPBITS_ONE,
             'commands': {
-                'model': '*modelname=?#',
                 'lamp_hours': '*ltim=?#',
                 'status': '*pow=?#',
                 'on': '*pow=on#',
@@ -56,8 +56,13 @@ class Config:
     def __init__(self, log):
         self.log = log
 
-        # Attributes
-        self.PROJECTOR_BRANDS = ['benq']
+        # Static Attributes
+        self.MQTT_TOPIC_HOMEASSISTANT = 'homeassistant/{component}/projector2mqtt-{name}/{path}'
+        self.MQTT_TOPIC_PROJECTOR = 'projector2mqtt/{name}/{path}'
+        self.DEVICE = None
+        self.PROJECTOR_CONFIG = None
+
+        # Configurable Attributes
         self.LOG_LEVEL = 'INFO'
         self.LOG_PATH = '/logs'
         self.LOG_RETENTION_DAYS = 5
@@ -101,6 +106,7 @@ class Config:
             if self.PROJECTOR_MODEL.lower() not in SUPPORTED_PROJECTORS[self.PROJECTOR_BRAND.lower()]:
                 log.error('This {} model is not supported by the controller! Please check here for the supported list: {}'.format(self.PROJECTOR_BRAND.lower(), SUPPORTED_DEVICES_URL))
                 sys.exit(4)
+            self.PROJECTOR_CONFIG = SUPPORTED_PROJECTORS[self.PROJECTOR_BRAND.lower()][self.PROJECTOR_MODEL.lower()]
             # Validate PROJECTOR_PORT
             self.PROJECTOR_PORT = os.environ['PROJECTOR_PORT'] if 'PROJECTOR_PORT' in os.environ else self.PROJECTOR_PORT
             # Validate PROJECTOR_COOLDOWN_MINUTES
@@ -160,3 +166,12 @@ class Config:
         except Exception as ex:
             log.error('Unable to load config file! Reason: {}\nStacktrace:\n{}'.format(str(ex), traceback.format_exc()))
             sys.exit(4)
+        
+        # Configure DEVICE for HomeAssistant to understand
+        self.DEVICE = {
+            'name': '{brand} {model}'.format(brand=self.PROJECTOR_BRAND, model=self.PROJECTOR_MODEL),
+            'manufacturer': self.PROJECTOR_BRAND,
+            'model': self.PROJECTOR_MODEL,
+            'identifiers': self.PROJECTOR_NAME,
+            'via_device': 'projector2mqtt'
+        }
