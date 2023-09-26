@@ -41,8 +41,7 @@ def main():
 
     log.info('Starting up Projector updater...')
     projector = bin.projector.Projector(log, config)
-    projector.connect_mqtt()
-    projector.connect_serial()
     projector.start()
+    projector.join()
 
 main()

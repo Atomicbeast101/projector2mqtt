@@ -25,8 +25,11 @@ class Projector(threading.Thread):
         self.lamp_hours = None
         self.last_off = None
         self.cooldown_left = None
-    
-    def connect_mqtt(self):
+
+        self._connect_mqtt()
+        self._connect_serial()
+
+    def _connect_mqtt(self):
         self._mqtt = paho.mqtt.client.Client('projector2mqtt')
         self._mqtt.on_connect = self._mqtt_on_connect
         self._mqtt.on_message = self._mqtt_on_message
@@ -102,9 +105,9 @@ class Projector(threading.Thread):
         self._mqtt.publish(topic, json.dumps(payload))
         self._log.info('MQTT topics configured for HomeAssistant!')
 
-        self._mqtt.loop_forever()
+        self._mqtt.loop_start()
 
-    def connect_serial(self):
+    def _connect_serial(self):
         self._log.info('Connecting to projector\'s serial port...')
         try:
             self.serial = serial.Serial(
@@ -118,9 +121,9 @@ class Projector(threading.Thread):
                 dsrdtr=False
             )
             self.status = 'online'
+            self._log.info('Successfully connected to serial port!')
         except Exception as ex:
-            self._log.error('Error trying to load the projector. Reason: {}'.format(str(ex)))
-        self._log.info('Successfully connected to serial port!')
+            self._log.error('Error trying to connect to the projector! Reason: {}'.format(str(ex)))
     
     def _read(self):
         output = ''
@@ -253,7 +256,7 @@ class Projector(threading.Thread):
         count = 0
         while True:
             if self.status == 'offline':
-                self._connect()
+                self._connect_serial()
 
             while True:
                 if not self.lock:
@@ -279,12 +282,13 @@ class Projector(threading.Thread):
                         self._log.error('Unable to check power status of the projector! Output received: {}'.format(output))
 
             except bin.exception.ProjectorException as ex:
+                self.status = 'offline'
                 self.cooldown_left = None
                 self.lamp_hours = None
                 self.running = None
                 self._log.error(str(ex))
                 self.lock = False
-            
+
             self._update_mqtt()
             count += 1
             time.sleep(5)
