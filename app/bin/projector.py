@@ -112,7 +112,7 @@ class Projector(threading.Thread):
     def _connect_serial(self):
         self._log.info('Connecting to projector\'s serial port...')
         try:
-            self.serial = serial.Serial(
+            self._serial = serial.Serial(
                 port=self._config.PROJECTOR_PORT,
                 baudrate=self._config.PROJECTOR_CONFIG['baudrate'],
                 parity=self._config.PROJECTOR_CONFIG['parity'],
