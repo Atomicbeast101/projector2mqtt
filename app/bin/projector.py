@@ -31,24 +31,7 @@ class Projector(threading.Thread):
         self._connect_mqtt()
         self._connect_serial()
 
-    def _connect_mqtt(self):
-        self._mqtt = paho.mqtt.client.Client('projector2mqtt')
-        self._mqtt.on_connect = self._mqtt_on_connect
-        self._mqtt.on_message = self._mqtt_on_message
-        
-        self._log.info('Connecting to MQTT server...')
-        if self._config.MQTT_USERNAME:
-            self._log.debug('Setting username/password for access to MQTT server...')
-            self._mqtt.username_pw_set(self._config.MQTT_USERNAME, self._config.MQTT_PASSWORD)
-            self._log.debug('Username/Password set for access to MQTT server!')
-        try:
-            self._mqtt.connect(self._config.MQTT_HOST, self._config.MQTT_PORT, self._config.MQTT_TIMEOUT)
-        except Exception as ex:
-            self._log.error('Unable to connect to MQTT server! Reason: {}'.format(str(ex)))
-            sys.exit(4)
-        self._log.info('Connected to MQTT server!')
-        
-        self._log.info('Configuring MQTT topics for HomeAssistant...')
+    def _update_ha(self):
         # sensors
         topic = self._config.MQTT_TOPIC_HOMEASSISTANT.format(component='sensor', name=self._config.PROJECTOR_NAME.lower(), path='lamp_hours/config')
         self._log.debug('Configuring {topic} topic...'.format(topic=topic))
@@ -105,6 +88,26 @@ class Projector(threading.Thread):
             'unique_id': '{name}.projector'.format(name=self._config.PROJECTOR_NAME.lower())
         }
         self._mqtt.publish(topic, json.dumps(payload))
+
+    def _connect_mqtt(self):
+        self._mqtt = paho.mqtt.client.Client('projector2mqtt')
+        self._mqtt.on_connect = self._mqtt_on_connect
+        self._mqtt.on_message = self._mqtt_on_message
+        
+        self._log.info('Connecting to MQTT server...')
+        if self._config.MQTT_USERNAME:
+            self._log.debug('Setting username/password for access to MQTT server...')
+            self._mqtt.username_pw_set(self._config.MQTT_USERNAME, self._config.MQTT_PASSWORD)
+            self._log.debug('Username/Password set for access to MQTT server!')
+        try:
+            self._mqtt.connect(self._config.MQTT_HOST, self._config.MQTT_PORT, self._config.MQTT_TIMEOUT)
+        except Exception as ex:
+            self._log.error('Unable to connect to MQTT server! Reason: {}'.format(str(ex)))
+            sys.exit(4)
+        self._log.info('Connected to MQTT server!')
+        
+        self._log.info('Configuring MQTT topics for HomeAssistant...')
+        self._update_ha()
         self._log.info('MQTT topics configured for HomeAssistant!')
 
         self._mqtt.loop_start()
@@ -270,9 +273,13 @@ class Projector(threading.Thread):
                     self.cooldown_left = -1
                     if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)):
                         self.cooldown_left = ((self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
-                    if count >= 3:
+                    if count % 3 == 0:
                         self.lamp_hours = self._execute(self._config.PROJECTOR_CONFIG['commands']['lamp_hours'])
                         count = 0
+                    elif count >= 12:
+                        self._log.info('Updating MQTT topics for HomeAssistant...')
+                        self._update_ha()
+                        self._log.info('MQTT topics updated for HomeAssistant!')
                     output = self._execute(self._config.PROJECTOR_CONFIG['commands']['status'])
                     self.lock = False
                     if output == 'ON':
