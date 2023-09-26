@@ -40,7 +40,7 @@ def main():
     log.info('File logging configured!')
 
     log.info('Starting up Projector updater...')
-    projector = bin.Projector(log, config)
+    projector = bin.projector.Projector(log, config)
     projector.connect_mqtt()
     projector.connect_serial()
     projector.start()
