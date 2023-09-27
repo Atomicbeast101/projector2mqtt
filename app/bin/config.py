@@ -32,15 +32,15 @@ SUPPORTED_PROJECTORS = {
             'bytesize': serial.EIGHTBITS,
             'parity': serial.PARITY_NONE,
             'stopbits': serial.STOPBITS_ONE,
+            'wait': 1,
             'commands': {
                 'lamp_hours': '*ltim=?#',
                 'status': '*pow=?#',
                 'on': '*pow=on#',
-                'off': '*pow=off#'
+                'off': '*pow=off#',
             },
             'handshake': {
                 'send': '\r',
-                'wait': 1,
                 'expect': '>'
             },
             'failed_response': '*Block item#'
