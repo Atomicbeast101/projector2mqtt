@@ -1,7 +1,6 @@
 # Imports
 import paho.mqtt.client
 import bin.exception
-import bin.config
 import threading
 import datetime
 import serial
@@ -121,7 +120,7 @@ class Projector(threading.Thread):
                 parity=self._config.PROJECTOR_CONFIG['parity'],
                 stopbits=self._config.PROJECTOR_CONFIG['stopbits'],
                 bytesize=self._config.PROJECTOR_CONFIG['bytesize'],
-                timeout=bin.config.SERIAL_TIMEOUT,
+                timeout=self._config.SERIAL_TIMEOUT,
                 rtscts=False,
                 dsrdtr=False
             )
@@ -205,12 +204,13 @@ class Projector(threading.Thread):
 
         self.lock = True
         status = self._execute(self._config.PROJECTOR_CONFIG['commands']['on'])
-        time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
-        self.lock = False
         if status == 'ON':
             self.running = 'on'
             self._update_mqtt()
+            time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
+            self.lock = False
             return True, ''
+        self.lock = False
         return False, {
             'reason': 'bad_data',
             'data': status
@@ -223,13 +223,14 @@ class Projector(threading.Thread):
 
         self.lock = True
         status = self._execute(self._config.PROJECTOR_CONFIG['commands']['off'])
-        time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
-        self.lock = False
         if status == 'OFF':
             self.last_off = datetime.datetime.now()
             self.running = 'off'
             self._update_mqtt()
+            time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
+            self.lock = False
             return True, ''
+        self.lock = False
         return False, {
             'reason': 'bad_data',
             'data': status
@@ -273,8 +274,8 @@ class Projector(threading.Thread):
                 if self.status == 'online':
                     self.lock = True
                     self.cooldown_left = -1
-                    if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)):
-                        self.cooldown_left = ((self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
+                    if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=self._config.PROJECTOR_COOLDOWN_MINUTES)):
+                        self.cooldown_left = ((self.last_off + datetime.timedelta(minutes=self._config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
                     if count % 3 == 0:
                         self.lamp_hours = self._execute(self._config.PROJECTOR_CONFIG['commands']['lamp_hours'])
                     elif count >= 12:
