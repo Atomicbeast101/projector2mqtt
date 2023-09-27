@@ -7,23 +7,7 @@ import sys
 import os
 import re
 
-### Environmental Variables ###
-# LOG_LEVEL = INFO
-# LOG_PATH = /logs
-# LOG_RETENTION_DAYS = 5
-# PROJECTOR_BRAND = benq
-# PROJECTOR_MODEL = TK700
-# PROJECTOR_PORT = /dev/ttyUSB0
-# PROJECTOR_COOLDOWN_MINUTES = 10
-# PROJECTOR_UNIQUE_ID = <UNIQUE_ID>
-# MQTT_HOST = <HOST>
-# MQTT_PORT = 1883
-# MQTT_USERNAME = <BLANK_IF_NOT_USED>
-# MQTT_PASSWORD = <BLANK_IF_NOT_USED>
-# MQTT_TIMEOUT = 60
-
 # Attributes
-SERIAL_TIMEOUT = 1
 SUPPORTED_PROJECTORS = {
     'benq': {
         # https://esupportdownload.benq.com/esupport/PROJECTOR/Control%20Protocols/TK700STi/TK700STi_RS232%20Control%20Guide_0_Windows10_Windows7_Windows8.pdf
@@ -72,6 +56,7 @@ class Config:
         self.PROJECTOR_PORT = '/dev/ttyUSB0'
         self.PROJECTOR_COOLDOWN_MINUTES = 10
         self.PROJECTOR_NAME = ''
+        self.SERIAL_TIMEOUT = 1
         self.MQTT_HOST = 'localhost'
         self.MQTT_PORT = 1883
         self.MQTT_USERNAME = ''
@@ -127,6 +112,15 @@ class Config:
                     sys.exit(4)
             elif not self.PROJECTOR_NAME:
                 log.error('Invalid PROJECTOR_NAME value! Please populate a unique ID for this projector you want to control. It can be a brand/model or a name & location. Only A-Z, _ and - characters are permitted.')
+                sys.exit(4)
+            # Validate SERIAL_TIMEOUT
+            self.SERIAL_TIMEOUT = os.environ['SERIAL_TIMEOUT'] if 'SERIAL_TIMEOUT' in os.environ else self.SERIAL_TIMEOUT
+            if str(self.SERIAL_TIMEOUT).isnumeric():
+                if not int(self.SERIAL_TIMEOUT) >= 1:
+                    log.error('Invalid SERIAL_TIMEOUT number! It must be greater then or equal to 1.')
+                    sys.exit(4)
+            else:
+                log.error('Invalid SERIAL_TIMEOUT value! It must be numeric and greater than or equal to 1.')
                 sys.exit(4)
             # Validate MQTT_HOST
             self.MQTT_HOST = os.environ['MQTT_HOST'] if 'MQTT_HOST' in os.environ else None
