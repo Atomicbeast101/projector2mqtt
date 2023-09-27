@@ -275,11 +275,11 @@ class Projector(threading.Thread):
                         self.cooldown_left = ((self.last_off + datetime.timedelta(minutes=bin.config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
                     if count % 3 == 0:
                         self.lamp_hours = self._execute(self._config.PROJECTOR_CONFIG['commands']['lamp_hours'])
-                        count = 0
                     elif count >= 12:
                         self._log.info('Updating MQTT topics for HomeAssistant...')
                         self._update_ha()
                         self._log.info('MQTT topics updated for HomeAssistant!')
+                        count = 0
                     output = self._execute(self._config.PROJECTOR_CONFIG['commands']['status'])
                     self.lock = False
                     if output == 'ON':
