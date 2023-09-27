@@ -8,41 +8,13 @@ trigger:
     - v*.*
 
 steps:
-  - name: Build&Push linux/amd64 Docker Image
+  - name: Build&Push Docker Image to Home Registry
     image: thegeeklab/drone-docker-buildx
     privileged: true
     settings:
       registry: registry.potatolab.dev
       repo: registry.potatolab.dev/adam/${DRONE_REPO_NAME}
-      platforms: linux/amd64
-      username: 
-        from_secret: home_registry_username
-      password: 
-        from_secret: home_registry_password
-      tags: 
-        - ${DRONE_COMMIT_BRANCH}-dev-${DRONE_BUILD_NUMBER}
-
-  - name: Build&Push linux/arm64 Docker Image
-    image: thegeeklab/drone-docker-buildx
-    privileged: true
-    settings:
-      registry: registry.potatolab.dev
-      repo: registry.potatolab.dev/adam/${DRONE_REPO_NAME}
-      platforms: linux/arm64
-      username: 
-        from_secret: home_registry_username
-      password: 
-        from_secret: home_registry_password
-      tags: 
-        - ${DRONE_COMMIT_BRANCH}-dev-${DRONE_BUILD_NUMBER}
-
-  - name: Build&Push linux/arm/v7 Docker Image
-    image: thegeeklab/drone-docker-buildx
-    privileged: true
-    settings:
-      registry: registry.potatolab.dev
-      repo: registry.potatolab.dev/adam/${DRONE_REPO_NAME}
-      platforms: linux/arm/v7
+      platforms: linux/amd64,linux/arm64,linux/arm/v7
       username: 
         from_secret: home_registry_username
       password: 
@@ -66,9 +38,7 @@ steps:
         from_secret: test_server_key
       ssh_extra_args: "-o StrictHostKeyChecking=no"
     depends_on:
-      - Build&Push linux/amd64 Docker Image
-      - Build&Push linux/arm64 Docker Image
-      - Build&Push linux/arm/v7 Docker Image
+      - Build&Push Docker Image to Home Registry
     when:
       status:
         - success
