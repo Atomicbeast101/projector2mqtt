@@ -139,7 +139,7 @@ class Projector(threading.Thread):
     def _execute(self, cmd):
         # Access console
         self._serial.write(self._config.PROJECTOR_CONFIG['handshake']['send'].encode())
-        time.sleep(self._config.PROJECTOR_CONFIG['wait'])
+        time.sleep(self._config.PROJECTOR_CONFIG['handshake']['wait'])
         output = self._read()
         if output != self._config.PROJECTOR_CONFIG['handshake']['expect']:
             raise bin.exception.ProjectorException('Unexpected serial output from the projector! Expecting {} but got {} instead (for {} command).'.format(self._config.PROJECTOR_CONFIG['handshake']['expect'], output, cmd))
@@ -149,7 +149,7 @@ class Projector(threading.Thread):
         while True:
             self._serial.write((cmd + self._config.PROJECTOR_CONFIG['handshake']['send']).encode())
             self._log.debug('Command sent to serial device: {}'.format(cmd))
-            time.sleep(self._config.PROJECTOR_CONFIG['wait'])
+            time.sleep(self._config.PROJECTOR_CONFIG['handshake']['wait'])
             output = self._read()
             self._log.debug('Output received from serial device: {}'.format(output.strip()))
             if output == self._config.PROJECTOR_CONFIG['failed_response']:
@@ -205,7 +205,7 @@ class Projector(threading.Thread):
 
         self.lock = True
         status = self._execute(self._config.PROJECTOR_CONFIG['commands']['on'])
-        time.sleep(self._config.PROJECTOR_CONFIG['wait'])
+        time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
         self.lock = False
         if status == 'ON':
             self.running = 'on'
@@ -223,7 +223,7 @@ class Projector(threading.Thread):
 
         self.lock = True
         status = self._execute(self._config.PROJECTOR_CONFIG['commands']['off'])
-        time.sleep(self._config.PROJECTOR_CONFIG['wait'])
+        time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
         self.lock = False
         if status == 'OFF':
             self.last_off = datetime.datetime.now()
