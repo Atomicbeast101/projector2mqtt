@@ -205,6 +205,7 @@ class Projector(threading.Thread):
 
         self.lock = True
         status = self._execute(self._config.PROJECTOR_CONFIG['commands']['on'])
+        time.sleep(self._config.PROJECTOR_CONFIG['handshake']['wait'])
         self.lock = False
         if status == 'ON':
             self.running = 'on'
