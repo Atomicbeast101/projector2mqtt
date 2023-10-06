@@ -17,18 +17,23 @@ SUPPORTED_PROJECTORS = {
             'parity': serial.PARITY_NONE,
             'stopbits': serial.STOPBITS_ONE,
             'commands': {
-                'lamp_hours': '*ltim=?#',
-                'status': '*pow=?#',
-                'on': '*pow=on#',
-                'off': '*pow=off#'
+                'holdup_response': '*Block item#',
+                'holdup_seconds': 1,
+                'holdup_retries': 10,
+                'read': {
+                    'lamp_hours': '*ltim=?#',
+                    'status': '*pow=?#'
+                },
+                'write': {
+                    'on': '*pow=on#',
+                    'off': '*pow=off#'
+                }
             },
-            'write_cmd_wait': 10,
             'handshake': {
                 'wait': 1,
                 'send': '\r',
                 'expect': '>'
-            },
-            'failed_response': '*Block item#'
+            }
         }
     }
 }

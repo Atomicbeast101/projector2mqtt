@@ -19,7 +19,7 @@ class Projector(threading.Thread):
         self._mqtt = None
         self._serial = None
 
-        self.lock = False
+        self.lock = threading.Lock()
 
         self.status = 'offline'
         self.running = None
@@ -111,8 +111,8 @@ class Projector(threading.Thread):
 
         self._mqtt.loop_start()
 
-    def _connect_serial(self):
-        self._log.info('Connecting to projector\'s serial port...')
+    def _connect(self):
+        self._log.debug('Connecting to projector\'s serial port...')
         try:
             self._serial = serial.Serial(
                 port=self._config.PROJECTOR_PORT,
@@ -125,10 +125,10 @@ class Projector(threading.Thread):
                 dsrdtr=False
             )
             self.status = 'online'
-            self._log.info('Successfully connected to serial port!')
+            self._log.debug('Successfully connected to serial port!')
         except Exception as ex:
             self._log.error('Error trying to connect to the projector! Reason: {}'.format(str(ex)))
-    
+
     def _read(self):
         output = ''
         while self._serial.inWaiting() > 0:
@@ -151,13 +151,20 @@ class Projector(threading.Thread):
             time.sleep(self._config.PROJECTOR_CONFIG['handshake']['wait'])
             output = self._read()
             self._log.debug('Output received from serial device: {}'.format(output.strip()))
-            if output == self._config.PROJECTOR_CONFIG['failed_response']:
-                if count >= 1:
-                    self._log.warning('Projector returned failed response "{}".'.format(output))
+            if output == self._config.PROJECTOR_CONFIG['commands']['holdup_response']:
+                if count >= self._config.PROJECTOR_CONFIG['commands']['holdup_retries']:
+                    self._log.error('Projector still returend "{}" after {} retries ({} seconds between each retry).'.format(
+                        self._config.PROJECTOR_CONFIG['commands']['holdup_response'],
+                        self._config.PROJECTOR_CONFIG['commands']['holdup_retries'],
+                        self._config.PROJECTOR_CONFIG['commands']['holdup_seconds']
+                    ))
                     raise bin.exception.ProjectorException('Unexpected error when trying to process the returned output: {}!'.format(output))
                 else:
-                    self._log.warning('Projector returned failed response "{}". Trying again in 5 seconds.'.format(output))
-                    time.sleep(1)
+                    self._log.debug('Projector returned holdup response "{}". Trying again in {} seconds.'.format(
+                        self._config.PROJECTOR_CONFIG['commands']['holdup_response'],
+                        self._config.PROJECTOR_CONFIG['commands']['holdup_seconds']
+                    ))
+                    time.sleep(self._config.PROJECTOR_CONFIG['commands']['holdup_seconds'])
                     count += 1
             else:
                 return output.strip()[1:-1].split('=')[1]
@@ -192,49 +199,37 @@ class Projector(threading.Thread):
                         self._log.error('Unexpected output from the projector! This is the output it received: {}'.format(reason['data']))
 
     def _on(self):
-        while True:
-            if not self.lock:
-                break
-
         if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=self._config.PROJECTOR_COOLDOWN_MINUTES)):
             return False, {
                 'reason': 'needs_cooldown',
                 'data': ((self.last_off + datetime.timedelta(minutes=self._config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds
             }
 
-        self.lock = True
-        status = self._execute(self._config.PROJECTOR_CONFIG['commands']['on'])
-        if status == 'ON':
-            self.running = 'on'
-            self._update_mqtt()
-            time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
-            self.lock = False
-            return True, ''
-        self.lock = False
-        return False, {
-            'reason': 'bad_data',
-            'data': status
-        }
+        with self.lock:
+            status = self._execute(self._config.PROJECTOR_CONFIG['commands']['on'])
+            if status == 'ON':
+                self.running = 'on'
+                self._update_mqtt()
+                time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
+                return True, ''
+            return False, {
+                'reason': 'bad_data',
+                'data': status
+            }
     
     def _off(self):
-        while True:
-            if not self.lock:
-                break
-
-        self.lock = True
-        status = self._execute(self._config.PROJECTOR_CONFIG['commands']['off'])
-        if status == 'OFF':
-            self.last_off = datetime.datetime.now()
-            self.running = 'off'
-            self._update_mqtt()
-            time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
-            self.lock = False
-            return True, ''
-        self.lock = False
-        return False, {
-            'reason': 'bad_data',
-            'data': status
-        }
+        with self.lock:
+            status = self._execute(self._config.PROJECTOR_CONFIG['commands']['off'])
+            if status == 'OFF':
+                self.last_off = datetime.datetime.now()
+                self.running = 'off'
+                self._update_mqtt()
+                time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
+                return True, ''
+            return False, {
+                'reason': 'bad_data',
+                'data': status
+            }
     
     def _update_mqtt(self):
         self._log.info('Updating MQTT metrics...')
@@ -266,32 +261,27 @@ class Projector(threading.Thread):
             if self.status == 'offline':
                 self._connect_serial()
 
-            while True:
-                if not self.lock:
-                    break
-            
             try:
                 if self.status == 'online':
-                    self.lock = True
-                    self.cooldown_left = -1
-                    if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=self._config.PROJECTOR_COOLDOWN_MINUTES)):
-                        self.cooldown_left = ((self.last_off + datetime.timedelta(minutes=self._config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
-                    if count % 3 == 0:
-                        self.lamp_hours = self._execute(self._config.PROJECTOR_CONFIG['commands']['lamp_hours'])
-                    elif count >= 12:
-                        self._log.info('Updating MQTT topics for HomeAssistant...')
-                        self._update_ha()
-                        self._log.info('MQTT topics updated for HomeAssistant!')
-                        count = 0
-                    output = self._execute(self._config.PROJECTOR_CONFIG['commands']['status'])
-                    self.lock = False
-                    if output == 'ON':
-                        self.running = 'on'
-                    elif output == 'OFF':
-                        self.running = 'off'
-                    else:
-                        self.running = None
-                        self._log.error('Unable to check power status of the projector! Output received: {}'.format(output))
+                    with self.lock:
+                        self.cooldown_left = -1
+                        if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=self._config.PROJECTOR_COOLDOWN_MINUTES)):
+                            self.cooldown_left = ((self.last_off + datetime.timedelta(minutes=self._config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
+                        if count % 3 == 0:
+                            self.lamp_hours = self._execute(self._config.PROJECTOR_CONFIG['commands']['lamp_hours'])
+                        elif count >= 12:
+                            self._log.info('Updating MQTT topics for HomeAssistant...')
+                            self._update_ha()
+                            self._log.info('MQTT topics updated for HomeAssistant!')
+                            count = 0
+                        output = self._execute(self._config.PROJECTOR_CONFIG['commands']['status'])
+                        if output == 'ON':
+                            self.running = 'on'
+                        elif output == 'OFF':
+                            self.running = 'off'
+                        else:
+                            self.running = None
+                            self._log.error('Unable to check power status of the projector! Output received: {}'.format(output))
 
             except bin.exception.ProjectorException as ex:
                 self.status = 'offline'
@@ -299,7 +289,6 @@ class Projector(threading.Thread):
                 self.lamp_hours = None
                 self.running = None
                 self._log.error(str(ex))
-                self.lock = False
 
             self._update_mqtt()
             count += 1
