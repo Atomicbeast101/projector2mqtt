@@ -111,7 +111,7 @@ class Projector(threading.Thread):
 
         self._mqtt.loop_start()
 
-    def _connect(self):
+    def _connect_serial(self):
         self._log.debug('Connecting to projector\'s serial port...')
         try:
             self._serial = serial.Serial(
