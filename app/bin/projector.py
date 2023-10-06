@@ -138,7 +138,7 @@ class Projector(threading.Thread):
     def _execute(self, cmd):
         # Access console
         self._serial.write(self._config.PROJECTOR_CONFIG['handshake']['send'].encode())
-        time.sleep(self._config.PROJECTOR_CONFIG['handshake']['wait'])
+        time.sleep(self._config.PROJECTOR_CONFIG['wait_response'])
         output = self._read()
         if output != self._config.PROJECTOR_CONFIG['handshake']['expect']:
             raise bin.exception.ProjectorException('Unexpected serial output from the projector! Expecting {} but got {} instead (for {} command).'.format(self._config.PROJECTOR_CONFIG['handshake']['expect'], output, cmd))
@@ -148,7 +148,7 @@ class Projector(threading.Thread):
         while True:
             self._serial.write((cmd + self._config.PROJECTOR_CONFIG['handshake']['send']).encode())
             self._log.debug('Command sent to serial device: {}'.format(cmd))
-            time.sleep(self._config.PROJECTOR_CONFIG['handshake']['wait'])
+            time.sleep(self._config.PROJECTOR_CONFIG['wait_response'])
             output = self._read()
             self._log.debug('Output received from serial device: {}'.format(output.strip()))
             if output == self._config.PROJECTOR_CONFIG['commands']['holdup_response']:
@@ -206,11 +206,10 @@ class Projector(threading.Thread):
             }
 
         with self.lock:
-            status = self._execute(self._config.PROJECTOR_CONFIG['commands']['on'])
+            status = self._execute(self._config.PROJECTOR_CONFIG['commands']['write']['on'])
             if status == 'ON':
                 self.running = 'on'
                 self._update_mqtt()
-                time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
                 return True, ''
             return False, {
                 'reason': 'bad_data',
@@ -219,12 +218,11 @@ class Projector(threading.Thread):
     
     def _off(self):
         with self.lock:
-            status = self._execute(self._config.PROJECTOR_CONFIG['commands']['off'])
+            status = self._execute(self._config.PROJECTOR_CONFIG['commands']['write']['off'])
             if status == 'OFF':
                 self.last_off = datetime.datetime.now()
                 self.running = 'off'
                 self._update_mqtt()
-                time.sleep(self._config.PROJECTOR_CONFIG['write_cmd_wait'])
                 return True, ''
             return False, {
                 'reason': 'bad_data',
@@ -268,7 +266,7 @@ class Projector(threading.Thread):
                         if self.last_off and datetime.datetime.now() > (self.last_off + datetime.timedelta(minutes=self._config.PROJECTOR_COOLDOWN_MINUTES)):
                             self.cooldown_left = ((self.last_off + datetime.timedelta(minutes=self._config.PROJECTOR_COOLDOWN_MINUTES)) - datetime.datetime.now()).seconds / 60.0
                         if count % 3 == 0:
-                            self.lamp_hours = self._execute(self._config.PROJECTOR_CONFIG['commands']['lamp_hours'])
+                            self.lamp_hours = self._execute(self._config.PROJECTOR_CONFIG['commands']['read']['lamp_hours'])
                         elif count >= 12:
                             self._log.info('Updating MQTT topics for HomeAssistant...')
                             self._update_ha()
