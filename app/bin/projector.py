@@ -272,7 +272,7 @@ class Projector(threading.Thread):
                             self._update_ha()
                             self._log.info('MQTT topics updated for HomeAssistant!')
                             count = 0
-                        output = self._execute(self._config.PROJECTOR_CONFIG['commands']['status'])
+                        output = self._execute(self._config.PROJECTOR_CONFIG['commands']['read']['status'])
                         if output == 'ON':
                             self.running = 'on'
                         elif output == 'OFF':
