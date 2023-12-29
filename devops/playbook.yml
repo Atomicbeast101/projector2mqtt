@@ -3,10 +3,18 @@
   hosts: all
   any_errors_fatal: true
   tasks:
+    - name: Create /root/apps directory
+      file:
+        path: /root/apps
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
     - name: Upload docker-compose.yml file
       template: 
         src: docker-compose.yml.j2
-        dest: /root/docker-compose.yml
+        dest: /root/apps/docker-compose.yml
         owner: root
         group: root
         mode: 0600
@@ -18,10 +26,14 @@
         password: "{{ lookup('env', 'HOME_REGISTRY_PASSWORD') }}"
 
     - name: Create & run docker containers
-      community.docker.docker_compose:
-        project_src: /root
+      chdir: /root/apps
+      shell: docker compose up -d
+
+    - name: Get output of docker compose ps
+      chdir: /root/apps
+      shell: docker compose ps --format json
       register: output
 
-    - name: Show docker-compose output
+    - name: Show docker compose ps output
       ansible.builtin.debug:
         var: output
