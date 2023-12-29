@@ -18,7 +18,7 @@
         password: "{{ lookup('env', 'HOME_REGISTRY_PASSWORD') }}"
 
     - name: Create & run docker containers
-      docker_compose:
+      community.docker.docker_compose:
         project_src: /root
       register: output
 
