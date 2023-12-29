@@ -23,7 +23,8 @@ steps:
         - ${DRONE_COMMIT_BRANCH}-dev-${DRONE_BUILD_NUMBER}
 
   - name: Deploy to Test Infra
-    image: plugins/ansible:3
+    # image: plugins/ansible:3
+    image: owncloudci/drone-ansible:9
     environment:
       MQTT_HOST:
         from_secret: mqtt_host
@@ -32,7 +33,6 @@ steps:
       HOME_REGISTRY_PASSWORD:
         from_secret: home_registry_password
     settings:
-      galaxy: devops/galaxy.yml
       playbook: devops/playbook.yml
       inventory: devops/inventory
       private_key:
