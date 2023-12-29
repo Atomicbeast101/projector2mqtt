@@ -26,12 +26,14 @@
         password: "{{ lookup('env', 'HOME_REGISTRY_PASSWORD') }}"
 
     - name: Create & run docker containers
-      chdir: /root/apps
-      shell: docker compose up -d
+      shell: 
+        cmd: docker compose up -d
+        chdir: /root/apps
 
     - name: Get output of docker compose ps
-      chdir: /root/apps
-      shell: docker compose ps --format json
+      shell: 
+        cmd: docker compose ps --format json
+        chdir: /root/apps
       register: output
 
     - name: Show docker compose ps output
