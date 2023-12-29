@@ -30,12 +30,12 @@
         cmd: docker compose up -d
         chdir: /root/apps
 
-    - name: Get output of docker compose ps
-      shell: 
-        cmd: docker compose ps --format json
-        chdir: /root/apps
-      register: output
+    # - name: Get output of docker compose ps
+    #   shell: 
+    #     cmd: docker compose ps --format json
+    #     chdir: /root/apps
+    #   register: output
 
-    - name: Show docker compose ps output
-      ansible.builtin.debug:
-        var: output
+    # - name: Show docker compose ps output
+    #   ansible.builtin.debug:
+    #     var: output
