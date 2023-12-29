@@ -33,6 +33,7 @@ steps:
       HOME_REGISTRY_PASSWORD:
         from_secret: home_registry_password
     settings:
+      galaxy: devops/galaxy.yml
       playbook: devops/playbook.yml
       inventory: devops/inventory
       private_key:
